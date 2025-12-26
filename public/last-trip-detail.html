@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trip Details - Premium Rentals</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#333;background:#f8f9fa}
+header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:1rem 0;position:sticky;top:0;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    nav{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px}
+    .logo{font-size:1.5rem;font-weight:700}
+    .nav-links{display:flex;list-style:none;gap:2rem}
+    .nav-links a{color:#fff;text-decoration:none}
+    .menu-toggle{display:none;flex-direction:column;cursor:pointer}
+    .menu-toggle span{width:25px;height:3px;background:#fff;margin:3px 0;transition:.3s}
+    @media(max-width:768px){
+      nav{position:relative}
+      .nav-links{position:absolute;top:100%;left:0;right:0;background:#667eea;flex-direction:column;padding:1rem;transform:translateY(-100%);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s}
+      .nav-links.active{transform:translateY(0);opacity:1;pointer-events:all}
+      .menu-toggle{display:flex}
+    }
+
+    .container{max-width:1100px;margin:0 auto;padding:2rem 20px}
+    .back{display:inline-flex;gap:.5rem;color:#667eea;text-decoration:none;margin-bottom:1rem}
+    .card{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);overflow:hidden}
+    .gallery{position:relative;background:#000}
+    .main-img{width:100%;height:420px;object-fit:contain;background:#000}
+    .thumbs{display:flex;gap:.5rem;padding:.75rem;overflow-x:auto;background:#f2f3f7}
+    .thumbs img{width:90px;height:70px;object-fit:cover;border-radius:6px;opacity:.7;border:3px solid transparent;cursor:pointer}
+    .thumbs img.active{opacity:1;border-color:#667eea}
+
+    .content{padding:1.5rem}
+    .title{font-size:2rem;margin:.25rem 0;color:#333}
+    .meta{color:#666;margin-bottom:1rem}
+    .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}
+    .chip{background:#eef2ff;color:#4f46e5;padding:.4rem .7rem;border-radius:999px;font-size:.85rem}
+    .section-title{color:#667eea;margin:1.5rem 0 .75rem 0}
+    .feedback{white-space:pre-line;color:#444}
+
+    .comments{margin-top:2rem}
+    .comment{background:#fafafa;border:1px solid #eee;border-radius:10px;padding:.8rem 1rem;margin:.5rem 0}
+    .comment .name{font-weight:600;color:#333}
+    .comment .date{color:#777;font-size:.85rem}
+
+    .comment-form{margin-top:1rem;display:grid;gap:.6rem}
+    .input,.textarea{width:100%;padding:.8rem;border:1px solid #ddd;border-radius:8px}
+    .btn{align-self:start;padding:.7rem 1.5rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:8px;cursor:pointer}
+
+    footer{background:#333;color:#fff;text-align:center;padding:2rem;margin-top:2rem}
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <div class="logo">🚗 Premium Rentals</div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="cars.html">Cars</a></li>
+      <li><a href="spots.html">Picnic Spots</a></li>
+      <li><a href="last-trips.html">Last trips</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+    <div class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="container">
+  <a href="last-trips.html" class="back">← Back to last trips</a>
+  <div id="detail" class="card">
+    <div class="gallery">
+      <img id="mainImage" class="main-img" src="" alt="Trip image">
+      <div id="thumbs" class="thumbs"></div>
+    </div>
+    <div class="content">
+      <div id="title" class="title"></div>
+      <div id="meta" class="meta"></div>
+      <div id="chips" class="chips"></div>
+      <div class="section-title">Customer Feedback</div>
+      <div id="feedback" class="feedback"></div>
+
+      <div class="comments">
+        <div class="section-title">Comments</div>
+        <div id="comments"></div>
+        <div class="comment-form">
+          <input id="cName" class="input" placeholder="Your name (optional)">
+          <textarea id="cText" class="textarea" placeholder="Write a comment..."></textarea>
+          <button class="btn" onclick="submitComment()">Post Comment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2025 Premium Rentals. All rights reserved.</p>
+</footer>
+
+<script>
+const API_URL = 'http://localhost:5000';
+const menuToggle = document.getElementById('menuToggle');
+if(menuToggle){ menuToggle.addEventListener('click', ()=> document.getElementById('navLinks').classList.toggle('active')); }
+let images = [];
+let current = 0;
+
+function getId(){ const p = new URLSearchParams(location.search); return p.get('id'); }
+function safeJSON(s){ try{ return JSON.parse(s); }catch(e){ return null; } }
+
+async function loadDetail(){
+  const id = getId(); if(!id){ document.getElementById('detail').innerHTML = '<div style="padding:1rem;color:#dc3545">Invalid trip id</div>'; return; }
+  try{
+    const res = await fetch(`${API_URL}/api/last_trips/${id}`);
+    if(!res.ok) throw new Error('not found');
+    const t = await res.json();
+    document.title = `${t.destination || 'Trip'} - Premium Rentals`;
+
+    images = typeof t.images === 'string' ? (safeJSON(t.images) || []) : (t.images||[]);
+    if(!images.length) images = ['/images/cars/images.jpg'];
+
+    document.getElementById('mainImage').src = `${API_URL}${images[0]}`;
+    const thumbs = document.getElementById('thumbs');
+    thumbs.innerHTML = images.map((img, idx)=>`<img src="${API_URL}${img}" class="${idx===0?'active':''}" onclick="show(${idx})">`).join('');
+
+    document.getElementById('title').textContent = t.destination || 'Trip';
+    const meta = [
+      (t.start_date && t.end_date)? `${t.start_date} → ${t.end_date}` : null,
+      t.days? `${t.days} days` : null,
+      t.persons? `${t.persons} persons` : null
+    ].filter(Boolean).join(' · ');
+    document.getElementById('meta').textContent = meta;
+
+    const chips = document.getElementById('chips');
+    const spots = typeof t.spots === 'string' ? (safeJSON(t.spots) || []) : (t.spots||[]);
+    chips.innerHTML = spots.map(s=>`<span class="chip">${s}</span>`).join('');
+
+    document.getElementById('feedback').textContent = t.feedback || 'No feedback provided.';
+
+    renderComments(t.comments||[]);
+  }catch(err){
+    document.getElementById('detail').innerHTML = '<div style="padding:1rem;color:#dc3545">Failed to load trip</div>';
+  }
+}
+
+function show(i){ current = i; document.getElementById('mainImage').src = `${API_URL}${images[i]}`; document.querySelectorAll('#thumbs img').forEach((el,idx)=> el.classList.toggle('active', idx===i)); }
+
+function renderComments(list){
+  const box = document.getElementById('comments');
+  if(!list.length){ box.innerHTML = '<div style="color:#666">No comments yet. Be the first to comment.</div>'; return; }
+  box.innerHTML = list.map(c=>`<div class="comment"><div class="name">${c.name || 'Guest'}</div><div>${c.comment}</div><div class="date">${c.created_at||''}</div></div>`).join('');
+}
+
+async function submitComment(){
+  const id = getId(); const name = document.getElementById('cName').value.trim(); const comment = document.getElementById('cText').value.trim();
+  if(!comment){ alert('Please write a comment.'); return; }
+  try{
+    const res = await fetch(`${API_URL}/api/last_trips/${id}/comments`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, comment})});
+    if(!res.ok){ alert('Failed to post comment'); return; }
+    document.getElementById('cText').value='';
+    const fresh = await fetch(`${API_URL}/api/last_trips/${id}`);
+    const t = await fresh.json();
+    renderComments(t.comments||[]);
+  }catch(err){ alert('Failed to post comment'); }
+}
+
+document.addEventListener('DOMContentLoaded', loadDetail);
+</script>
+<script src="/public/chat-widget.js"></script>
+</body>
+</html>

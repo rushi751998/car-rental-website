@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Cars - Premium Rentals</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; background: #f8f9fa; }
+    header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 1rem 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    nav { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+    .logo { font-size: 1.5rem; font-weight: 700; }
+    .nav-links { display: flex; list-style: none; gap: 2rem; }
+    .nav-links a { color: #fff; text-decoration: none; transition: opacity 0.3s; }
+    .nav-links a:hover { opacity: 0.85; }
+    .menu-toggle { display: none; flex-direction: column; cursor: pointer; }
+    .menu-toggle span { width: 25px; height: 3px; background: white; margin: 3px 0; transition: 0.3s; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 20px; }
+    .page-title { text-align: center; font-size: 2.2rem; color: #667eea; margin-bottom: 1rem; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 2rem; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+    .card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+    .card-carousel { position: relative; height: 180px; overflow: hidden; }
+    .card-carousel img, .card-carousel video { width: 100%; height: 100%; object-fit: cover; }
+    .carousel-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.85); border: none; padding: 8px 12px; cursor: pointer; font-size: 1rem; }
+    .carousel-nav.prev { left: 10px; }
+    .carousel-nav.next { right: 10px; }
+    .card-content { padding: 1rem; }
+    .card-title { font-size: 1.3rem; margin-bottom: 0.25rem; color: #333; }
+    .card-subtitle { color: #666; margin-bottom: 0.75rem; }
+    .card-details { display: flex; gap: 0.75rem; flex-wrap: wrap; color: #666; margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .price { font-size: 1.6rem; color: #667eea; font-weight: bold; margin: 0.5rem 0; }
+    .btn { display: inline-block; padding: 0.6rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; margin-right: 0.5rem; }
+
+    footer { background: #333; color: #fff; text-align: center; padding: 2rem; margin-top: 2rem; }
+
+    @media (max-width: 768px) {
+      .nav-links { position: absolute; top: 100%; left: 0; right: 0; background: #667eea; flex-direction: column; padding: 1rem; transform: translateY(-100%); opacity: 0; pointer-events: none; transition: transform 0.3s, opacity 0.3s; }
+      .nav-links.active { transform: translateY(0); opacity: 1; pointer-events: all; }
+      .menu-toggle { display: flex; }
+      .card-grid { grid-template-columns: 1fr; }
+      .btn { display: block; margin-bottom: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <div class="logo">🚗 Premium Rentals</div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="cars.html">Cars</a></li>
+      <li><a href="spots.html">Picnic Spots</a></li>
+      <li><a href="last-trips.html">Last trips</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+    <div class="menu-toggle" id="menuToggle">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+</header>
+
+<div class="container">
+  <h1 class="page-title">Our Cars</h1>
+  <p class="subtitle">Explore our fleet and choose the perfect ride for your journey</p>
+  <div id="carsGrid" class="card-grid"><div class="loading">Loading cars...</div></div>
+</div>
+
+<footer>
+  <p>&copy; 2025 Premium Rentals. All rights reserved.</p>
+</footer>
+
+<script>
+  const API_URL = 'http://localhost:5000';
+  const WHATSAPP_NUMBER = '9130201049';
+  function isVideoPath(p){ return /\.(mp4|webm|ogg|mov)$/i.test(p||''); }
+  document.getElementById('menuToggle').addEventListener('click', ()=>{
+    document.getElementById('navLinks').classList.toggle('active');
+  });
+
+  async function loadCars(){
+    try{
+      const res = await fetch(`${API_URL}/api/cars`);
+      const data = await res.json();
+      renderCars(data.cars || []);
+    }catch(e){ document.getElementById('carsGrid').innerHTML = '<div class="error">Failed to load cars.</div>'; }
+  }
+
+  function renderCars(cars){
+    const grid = document.getElementById('carsGrid');
+    if(!cars.length){ grid.innerHTML = '<p style="text-align:center;color:#666">No cars available at the moment.</p>'; return; }
+    grid.innerHTML = cars.map(car => `
+      <div class="card" onclick="window.location.href='car-detail.html?id=${car.id}'">
+        <div class="card-carousel" id="car-${car.id}">
+          ${car.images.map((m, idx)=> isVideoPath(m)
+            ? `<video src="${API_URL}${m}" muted loop playsinline autoplay style="display:${idx===0?'block':'none'}"></video>`
+            : `<img src="${API_URL}${m}" alt="${car.name}" style="display:${idx===0?'block':'none'}">`
+          ).join('')}
+          ${car.images.length>1 ? `
+            <button class="carousel-nav prev" onclick="event.stopPropagation(); move('car-${car.id}', -1)">❮</button>
+            <button class="carousel-nav next" onclick="event.stopPropagation(); move('car-${car.id}', 1)">❯</button>
+          `:''}
+        </div>
+        <div class="card-content">
+          <div class="card-title">${car.name}</div>
+          <div class="card-subtitle">${car.model}</div>
+          <div class="card-details">
+            <div>👥 ${car.seats} Seats</div>
+            <div>⚙️ ${car.transmission}</div>
+            <div>⛽ ${car.fuel_type}</div>
+          </div>
+          <div class="price">₹${car.price_per_day}/day</div>
+          <a href="car-detail.html?id=${car.id}" class="btn" onclick="event.stopPropagation()">View Details</a>
+          <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Hi, I'm interested in booking ${car.name} - ${car.model}" class="btn" target="_blank" onclick="event.stopPropagation()">Book Now</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.move = function(id, dir){
+    const el = document.getElementById(id);
+    const media = el.querySelectorAll('img,video');
+    let idx = 0;
+    media.forEach((m,i)=>{ if(m.style.display==='block') idx=i; m.style.display='none'; if(m.tagName.toLowerCase()==='video'){ try{ m.pause(); }catch(e){} } });
+    idx = (idx + dir + media.length) % media.length;
+    const cur = media[idx]; cur.style.display='block'; if(cur.tagName.toLowerCase()==='video'){ try{ cur.play(); }catch(e){} }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadCars);
+</script>
+<script src="/public/chat-widget.js"></script>
+</body>
+</html>

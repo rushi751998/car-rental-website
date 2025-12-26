@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Last Trips - Premium Rentals</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#333;background:#f8f9fa}
+header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:1rem 0;position:sticky;top:0;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    nav{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px}
+    .logo{font-size:1.5rem;font-weight:700}
+    .nav-links{display:flex;list-style:none;gap:2rem}
+    .nav-links a{color:#fff;text-decoration:none}
+    .menu-toggle{display:none;flex-direction:column;cursor:pointer}
+    .menu-toggle span{width:25px;height:3px;background:#fff;margin:3px 0;transition:.3s}
+    @media(max-width:768px){
+      nav{position:relative}
+      .nav-links{position:absolute;top:100%;left:0;right:0;background:#667eea;flex-direction:column;padding:1rem;transform:translateY(-100%);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s}
+      .nav-links.active{transform:translateY(0);opacity:1;pointer-events:all}
+      .menu-toggle{display:flex}
+    }
+
+    .container{max-width:1200px;margin:0 auto;padding:2rem 20px}
+    h1{font-size:2rem;color:#667eea;margin-bottom:1rem;text-align:center}
+    p.subtitle{text-align:center;color:#666;margin-bottom:2rem}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+    .post{position:relative;width:100%;padding-top:100%;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);cursor:pointer;background:#000}
+    .post img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transition:transform .3s ease}
+    .post:hover img{transform:scale(1.05)}
+    .badge{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,0.55);color:#fff;padding:6px 10px;border-radius:20px;font-size:.8rem}
+    .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.45),rgba(0,0,0,0));}
+
+    .loading,.error{text-align:center;padding:2rem;color:#667eea}
+    .error{color:#dc3545}
+    footer{background:#333;color:#fff;text-align:center;padding:2rem;margin-top:2rem}
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <div class="logo">🚗 Premium Rentals</div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="cars.html">Cars</a></li>
+      <li><a href="spots.html">Picnic Spots</a></li>
+      <li><a href="last-trips.html">Last trips</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+    <div class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></div>
+  </nav>
+</header>
+
+<div class="container">
+  <h1>Last Trips</h1>
+  <p class="subtitle">See highlights from our recent customer journeys</p>
+  <div id="grid" class="grid">
+    <div class="loading">Loading trips...</div>
+  </div>
+</div>
+
+<footer>
+  <p>&copy; 2025 Premium Rentals. All rights reserved.</p>
+</footer>
+
+<script>
+const API_URL = 'http://localhost:5000';
+const menuToggle = document.getElementById('menuToggle');
+if(menuToggle){ menuToggle.addEventListener('click', ()=> document.getElementById('navLinks').classList.toggle('active')); }
+
+function tryParseJSON(maybe){
+  try{ return JSON.parse(maybe); }catch(e){ return null; }
+}
+
+async function loadTrips(){
+  const grid = document.getElementById('grid');
+  try{
+    const res = await fetch(`${API_URL}/api/last_trips`);
+    const data = await res.json();
+    const trips = data.trips || [];
+    if(!trips.length){ grid.innerHTML = '<div class="error">No trips yet. Check back soon!</div>'; return; }
+    grid.innerHTML = trips.map(t=>{
+      let imgs = t.images;
+      if(typeof imgs === 'string'){ const parsed = tryParseJSON(imgs); imgs = parsed || []; }
+      const first = (imgs && imgs[0]) || '/images/cars/images.jpg';
+      const dateRange = (t.start_date && t.end_date) ? `${t.start_date} → ${t.end_date}` : '';
+      const dest = t.destination || 'Trip';
+      return `
+        <div class="post" onclick="window.location.href='last-trip-detail.html?id=${t.id}'">
+          <img src="${API_URL}${first}" alt="${dest}">
+          <div class="overlay"></div>
+          <div class="badge">${dest}${dateRange?` · ${dateRange}`:''}</div>
+        </div>
+      `;
+    }).join('');
+  }catch(err){
+    grid.innerHTML = '<div class="error">Failed to load trips</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadTrips);
+</script>
+<script src="/public/chat-widget.js"></script>
+</body>
+</html>

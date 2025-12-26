@@ -5,6 +5,15 @@ __pycache__/
 
 # C extensions
 *.so
+# 
+.venv
+
+cars/
+last_trips
+# spots.db
+rental.db
+
+spots
 
 # Distribution / packaging
 .Python

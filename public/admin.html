@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Premium Rentals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAC5m0QK7cmW6l5qMQP5hU" crossorigin="anonymous">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .btn:hover {
+            transform: scale(1.02);
+        }
+
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .admin-panel {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            font-size: 2rem;
+        }
+
+        .logout-btn {
+            padding: 0.8rem 1.5rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .add-btn {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .data-table {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .edit-btn, .delete-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .edit-btn {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .close-btn {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                text-align: center;
+            }
+
+            .data-table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+    <style>
+      header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:1rem 0;position:sticky;top:0;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+      nav{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px}
+      .logo{font-size:1.5rem;font-weight:700}
+      .nav-links{display:flex;list-style:none;gap:2rem}
+      .nav-links a{color:#fff;text-decoration:none}
+      .menu-toggle{display:none;flex-direction:column;cursor:pointer}
+      .menu-toggle span{width:25px;height:3px;background:#fff;margin:3px 0}
+      @media(max-width:768px){
+        nav{position:relative}
+        .nav-links{position:absolute;top:100%;left:0;right:0;background:#667eea;flex-direction:column;padding:1rem;transform:translateY(-100%);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s}
+        .nav-links.active{transform:translateY(0);opacity:1;pointer-events:all}
+        .menu-toggle{display:flex}
+      }
+    </style>
+</head>
+<body>
+    <header>
+      <nav>
+        <div class="logo">🚗 Premium Rentals</div>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="cars.html">Cars</a></li>
+          <li><a href="spots.html">Picnic Spots</a></li>
+          <li><a href="last-trips.html">Last trips</a></li>
+          <li><a href="index.html#about">About</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+        <div class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></div>
+      </nav>
+    </header>
+    <!-- Login Form -->
+    <div id="loginContainer" class="login-container">
+        <div class="login-box">
+            <h1>Admin Login</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+                <div id="loginError" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="admin-panel">
+        <div class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('cars')">Manage Cars</div>
+            <div class="tab" onclick="switchTab('spots')">Manage Picnic Spots</div>
+            <div class="tab" onclick="switchTab('lastTrips')">Manage Last Trips</div>
+        </div>
+
+        <!-- Cars Tab -->
+        <div id="carsTab" class="tab-content active">
+            <button class="add-btn" onclick="openAddCarModal()">+ Add New Car</button>
+            <div class="data-table">
+                <table id="carsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Model</th>
+                            <th>Price/Day</th>
+                            <th>Seats</th>
+                            <th>Transmission</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Spots Tab -->
+        <div id="spotsTab" class="tab-content">
+            <button class="add-btn" onclick="openAddSpotModal()">+ Add New Spot</button>
+            <div class="data-table">
+                <table id="spotsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Price</th>
+                            <th>Available</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Last Trips Tab -->
+        <div id="lastTripsTab" class="tab-content">
+            <button class="add-btn" onclick="openAddTripModal()">+ Add New Trip</button>
+            <div class="data-table">
+                <table id="lastTripsTable">
+                    <thead>
+                        <tr>
+                            <th>Destination</th>
+                            <th>Date Range</th>
+                            <th>Days</th>
+                            <th>Persons</th>
+                            <th>Available</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Car Modal -->
+    <div id="carModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="carModalTitle">Add Car</h2>
+                <span class="close-btn" onclick="closeCarModal()">×</span>
+            </div>
+            <form id="carForm">
+                <div class="form-group">
+                    <label>Car Name</label>
+                    <input type="text" id="carName" required>
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <input type="text" id="carModel" required>
+                </div>
+                <div class="form-group">
+                    <label>Price Per Day (₹)</label>
+                    <input type="number" id="carPrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Seats</label>
+                    <input type="number" id="carSeats" required>
+                </div>
+                <div class="form-group">
+                    <label>Transmission</label>
+                    <select id="carTransmission" required>
+                        <option value="Manual">Manual</option>
+                        <option value="Automatic">Automatic</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Fuel Type</label>
+                    <select id="carFuel" required>
+                        <option value="Petrol">Petrol</option>
+                        <option value="Diesel">Diesel</option>
+                        <option value="Electric">Electric</option>
+                        <option value="Hybrid">Hybrid</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Images</label>
+                    <div id="carDropZone" class="p-3 border border-2 rounded bg-light text-center" style="border-style: dashed !important;">
+                        Drag & drop images here or click to select
+                        <input type="file" id="carFilesInput" accept="image/*, video/*" multiple style="display:none;" />
+                    </div>
+                    <div id="carUploadPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    <label style="margin-top:1rem;">Or enter Image URLs (comma-separated)</label>
+                    <textarea id="carImages" placeholder="/images/cars/car1.jpg, /images/cars/car2.jpg"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="carDescription"></textarea>
+                </div>
+                <button type="submit" class="btn">Save Car</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Spot Modal -->
+    <div id="spotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="spotModalTitle">Add Picnic Spot</h2>
+                <span class="close-btn" onclick="closeSpotModal()">×</span>
+            </div>
+            <form id="spotForm">
+                <div class="form-group">
+                    <label>Spot Name</label>
+                    <input type="text" id="spotName" required>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="spotLocation" required>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="spotPrice" required>
+                </div>
+                <div class="form-group">
+                    <label>Images</label>
+                    <div id="spotDropZone" class="p-3 border border-2 rounded bg-light text-center" style="border-style: dashed !important;">
+                        Drag & drop images here or click to select
+                        <input type="file" id="spotFilesInput" accept="image/*, video/*" multiple style="display:none;" />
+                    </div>
+                    <div id="spotUploadPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    <label style="margin-top:1rem;">Or enter Image URLs (comma-separated)</label>
+                    <textarea id="spotImages" placeholder="/images/spots/spot1.jpg, /images/spots/spot2.jpg"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Short Description</label>
+                    <textarea id="spotShortDesc" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Detailed Description</label>
+                    <textarea id="spotDetailedDesc" required style="min-height: 150px;"></textarea>
+                </div>
+                <button type="submit" class="btn">Save Spot</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Trip Modal -->
+    <div id="tripModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tripModalTitle">Add Last Trip</h2>
+                <span class="close-btn" onclick="closeTripModal()">×</span>
+            </div>
+            <form id="tripForm">
+                <div class="form-group">
+                    <label>Destination</label>
+                    <input type="text" id="tripDestination" required>
+                </div>
+                <div class="form-group">
+                    <label>Spots (comma-separated)</label>
+                    <textarea id="tripSpots" placeholder="Spot A, Spot B, Spot C"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Days</label>
+                    <input type="number" id="tripDays" required>
+                </div>
+                <div class="form-group">
+                    <label>Persons</label>
+                    <input type="number" id="tripPersons" required>
+                </div>
+                <div class="form-group">
+                    <label>Images</label>
+                    <div id="tripDropZone" class="p-3 border border-2 rounded bg-light text-center" style="border-style: dashed !important;">
+                        Drag & drop images here or click to select
+                        <input type="file" id="tripFilesInput" accept="image/*, video/*" multiple style="display:none;" />
+                    </div>
+                    <div id="tripUploadPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    <label style="margin-top:1rem;">Or enter Image URLs (comma-separated)</label>
+                    <textarea id="tripImages" placeholder="/images/last_trips/img1.jpg, /images/last_trips/img2.jpg"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="tripStartDate" required>
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="tripEndDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Customer Feedback</label>
+                    <textarea id="tripFeedback" placeholder="Share overall trip experience..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="tripAvailable" checked> Available</label>
+                </div>
+                <button type="submit" class="btn">Save Trip</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+const API_URL = 'http://localhost:5000';
+function isVideoPath(p){ return /\.(mp4|webm|ogg|mov)$/i.test(p || ''); }
+const menuToggle = document.getElementById('menuToggle');
+if(menuToggle){ menuToggle.addEventListener('click', ()=> document.getElementById('navLinks').classList.toggle('active')); }
+        let adminCredentials = { username: '', password: '' };
+        let editingCarId = null;
+        let editingSpotId = null;
+        let editingTripId = null;
+        let carUploadedPaths = [];
+        let spotUploadedPaths = [];
+        let tripUploadedPaths = [];
+
+        function setupDropArea(dropZoneId, inputId, type, previewId) {
+            const dropZone = document.getElementById(dropZoneId);
+            const fileInput = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+
+            const openFileDialog = () => fileInput.click();
+            dropZone.addEventListener('click', openFileDialog);
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-primary');
+            });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-primary'));
+            dropZone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-primary');
+                await handleFiles(e.dataTransfer.files, type, preview);
+            });
+
+            fileInput.addEventListener('change', async (e) => {
+                await handleFiles(e.target.files, type, preview);
+                fileInput.value = '';
+            });
+        }
+
+        async function handleFiles(fileList, type, previewEl) {
+            const files = Array.from(fileList);
+            if (!files.length) return;
+
+            try {
+                const paths = await uploadImages(type, files);
+                let targetArray;
+                if (type === 'car') targetArray = carUploadedPaths;
+                else if (type === 'spot') targetArray = spotUploadedPaths;
+                else targetArray = tripUploadedPaths;
+                targetArray.push(...paths);
+                // Update preview
+                paths.forEach(p => {
+                    const isVid = isVideoPath(p);
+                    const media = document.createElement(isVid ? 'video' : 'img');
+                    media.src = `${API_URL}${p}`;
+                    media.style.width = '80px';
+                    media.style.height = '80px';
+                    media.style.objectFit = 'cover';
+                    media.className = 'rounded border';
+                    if(isVid){ media.muted = true; media.loop = true; media.autoplay = true; media.playsInline = true; }
+                    previewEl.appendChild(media);
+                });
+            } catch (err) {
+                alert('Image upload failed');
+            }
+        }
+
+        async function uploadImages(type, files) {
+            if (!adminCredentials.username || !adminCredentials.password) {
+                alert('Please login as admin before uploading images.');
+                throw new Error('Not logged in');
+            }
+            let url;
+            if (type === 'car') url = `${API_URL}/api/admin/upload/car`;
+            else if (type === 'spot') url = `${API_URL}/api/admin/upload/spot`;
+            else url = `${API_URL}/api/admin/upload/trip`;
+            const fd = new FormData();
+            files.forEach(f => fd.append('files', f));
+            fd.append('username', adminCredentials.username);
+            fd.append('password', adminCredentials.password);
+            const res = await fetch(url, { method: 'POST', body: fd });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            return data.paths || [];
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDropArea('carDropZone', 'carFilesInput', 'car', 'carUploadPreview');
+            setupDropArea('spotDropZone', 'spotFilesInput', 'spot', 'spotUploadPreview');
+            setupDropArea('tripDropZone', 'tripFilesInput', 'trip', 'tripUploadPreview');
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    adminCredentials = { username, password };
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    loadCars();
+                    loadSpots();
+                    loadLastTrips();
+                } else {
+                    document.getElementById('loginError').textContent = 'Invalid credentials';
+                }
+            } catch (error) {
+                document.getElementById('loginError').textContent = 'Login failed. Please try again.';
+            }
+        });
+
+        function logout() {
+            adminCredentials = { username: '', password: '' };
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('loginForm').reset();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`${tab}Tab`).classList.add('active');
+        }
+
+        // Cars Management
+        async function loadCars() {
+            try {
+                const response = await fetch(`${API_URL}/api/cars`);
+                const data = await response.json();
+                displayCars(data.cars);
+            } catch (error) {
+                console.error('Failed to load cars:', error);
+            }
+        }
+
+        function displayCars(cars) {
+            const tbody = document.querySelector('#carsTable tbody');
+            tbody.innerHTML = cars.map(car => `
+                <tr>
+                    <td>${car.name}</td>
+                    <td>${car.model}</td>
+                    <td>₹${car.price_per_day}</td>
+                    <td>${car.seats}</td>
+                    <td>${car.transmission}</td>
+                    <td class="action-btns">
+                        <button class="edit-btn" onclick="editCar(${car.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteCar(${car.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddCarModal() {
+            editingCarId = null;
+            document.getElementById('carModalTitle').textContent = 'Add New Car';
+            document.getElementById('carForm').reset();
+            carUploadedPaths = [];
+            document.getElementById('carUploadPreview').innerHTML = '';
+            document.getElementById('carModal').classList.add('active');
+        }
+
+        async function editCar(id) {
+            editingCarId = id;
+            try {
+                const response = await fetch(`${API_URL}/api/cars/${id}`);
+                const car = await response.json();
+                
+                document.getElementById('carModalTitle').textContent = 'Edit Car';
+                document.getElementById('carName').value = car.name;
+                document.getElementById('carModel').value = car.model;
+                document.getElementById('carPrice').value = car.price_per_day;
+                document.getElementById('carSeats').value = car.seats;
+                document.getElementById('carTransmission').value = car.transmission;
+                document.getElementById('carFuel').value = car.fuel_type;
+                document.getElementById('carImages').value = car.images.join(', ');
+                document.getElementById('carDescription').value = car.description || '';
+                carUploadedPaths = [];
+                document.getElementById('carUploadPreview').innerHTML = '';
+                
+                document.getElementById('carModal').classList.add('active');
+            } catch (error) {
+                alert('Failed to load car details');
+            }
+        }
+
+        function closeCarModal() {
+            document.getElementById('carModal').classList.remove('active');
+        }
+
+        document.getElementById('carForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const manualUrls = document.getElementById('carImages').value
+                ? document.getElementById('carImages').value.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+            const imagesCombined = [...manualUrls, ...carUploadedPaths];
+
+            const carData = {
+                name: document.getElementById('carName').value,
+                model: document.getElementById('carModel').value,
+                price_per_day: parseFloat(document.getElementById('carPrice').value),
+                seats: parseInt(document.getElementById('carSeats').value),
+                transmission: document.getElementById('carTransmission').value,
+                fuel_type: document.getElementById('carFuel').value,
+                images: imagesCombined,
+                description: document.getElementById('carDescription').value,
+                available: true
+            };
+
+            try {
+                const url = editingCarId 
+                    ? `${API_URL}/api/admin/cars/${editingCarId}`
+                    : `${API_URL}/api/admin/cars`;
+                const method = editingCarId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        car: carData,
+                        admin: adminCredentials
+                    })
+                });
+
+                if (response.ok) {
+                    closeCarModal();
+                    loadCars();
+                    alert(editingCarId ? 'Car updated successfully' : 'Car added successfully');
+                } else {
+                    alert('Operation failed');
+                }
+            } catch (error) {
+                alert('Operation failed. Please try again.');
+            }
+        });
+
+        async function deleteCar(id) {
+            if (!confirm('Are you sure you want to delete this car?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/cars/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin: adminCredentials })
+                });
+
+                if (response.ok) {
+                    loadCars();
+                    alert('Car deleted successfully');
+                } else {
+                    alert('Delete failed');
+                }
+            } catch (error) {
+                alert('Delete failed. Please try again.');
+            }
+        }
+
+        // Spots Management
+        async function loadSpots() {
+            try {
+                const response = await fetch(`${API_URL}/api/spots`);
+                const data = await response.json();
+                displaySpots(data.spots);
+            } catch (error) {
+                console.error('Failed to load spots:', error);
+            }
+        }
+
+        function displaySpots(spots) {
+            const tbody = document.querySelector('#spotsTable tbody');
+            tbody.innerHTML = spots.map(spot => `
+                <tr>
+                    <td>${spot.name}</td>
+                    <td>${spot.location}</td>
+                    <td>₹${spot.price}</td>
+                    <td>${spot.available ? 'Yes' : 'No'}</td>
+                    <td class="action-btns">
+                        <button class="edit-btn" onclick="editSpot(${spot.id})">Edit</button>
+                        <button class="delete-btn" onclick="deleteSpot(${spot.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddSpotModal() {
+            editingSpotId = null;
+            document.getElementById('spotModalTitle').textContent = 'Add New Spot';
+            document.getElementById('spotForm').reset();
+            spotUploadedPaths = [];
+            document.getElementById('spotUploadPreview').innerHTML = '';
+            document.getElementById('spotModal').classList.add('active');
+        }
+
+        async function editSpot(id) {
+            editingSpotId = id;
+            try {
+                const response = await fetch(`${API_URL}/api/spots/${id}`);
+                const spot = await response.json();
+                
+                document.getElementById('spotModalTitle').textContent = 'Edit Picnic Spot';
+                document.getElementById('spotName').value = spot.name;
+                document.getElementById('spotLocation').value = spot.location;
+                document.getElementById('spotPrice').value = spot.price;
+                document.getElementById('spotImages').value = spot.images.join(', ');
+                document.getElementById('spotShortDesc').value = spot.short_description;
+                document.getElementById('spotDetailedDesc').value = spot.detailed_description;
+                spotUploadedPaths = [];
+                document.getElementById('spotUploadPreview').innerHTML = '';
+                
+                document.getElementById('spotModal').classList.add('active');
+            } catch (error) {
+                alert('Failed to load spot details');
+            }
+        }
+
+        function closeSpotModal() {
+            document.getElementById('spotModal').classList.remove('active');
+        }
+
+        document.getElementById('spotForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const manualUrls = document.getElementById('spotImages').value
+                ? document.getElementById('spotImages').value.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+            const imagesCombined = [...manualUrls, ...spotUploadedPaths];
+
+            const spotData = {
+                name: document.getElementById('spotName').value,
+                location: document.getElementById('spotLocation').value,
+                price: parseFloat(document.getElementById('spotPrice').value),
+                images: imagesCombined,
+                short_description: document.getElementById('spotShortDesc').value,
+                detailed_description: document.getElementById('spotDetailedDesc').value,
+                available: true
+            };
+
+            try {
+                const url = editingSpotId 
+                    ? `${API_URL}/api/admin/spots/${editingSpotId}`
+                    : `${API_URL}/api/admin/spots`;
+                const method = editingSpotId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        spot: spotData,
+                        admin: adminCredentials
+                    })
+                });
+
+            
+                if (response.ok) {
+                    closeSpotModal();
+                    loadSpots();
+                    alert(editingSpotId ? 'Spot updated successfully' : 'Spot added successfully');
+                } else {
+                    alert('Operation failed');
+                }
+            } catch (error) {
+                alert('Operation failed. Please try again.');
+            }
+        });
+
+        async function deleteSpot(id) {
+            if (!confirm('Are you sure you want to delete this spot?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/spots/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ admin: adminCredentials })
+                });
+
+                if (response.ok) {
+                    loadSpots();
+                    alert('Spot deleted successfully');
+                } else {
+                    alert('Delete failed');
+                }
+            } catch (error) {
+                alert('Delete failed. Please try again.');
+            }
+        }
+    // Last Trips Management
+    async function loadLastTrips(){
+        try{
+            const res = await fetch(`${API_URL}/api/admin/last_trips/list`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin: adminCredentials })
+            });
+            if(!res.ok) throw new Error('Failed');
+            const data = await res.json();
+            displayLastTrips(data.trips || []);
+        }catch(err){
+            const tbody = document.querySelector('#lastTripsTable tbody');
+            if(tbody) tbody.innerHTML = '<tr><td colspan="6">Failed to load trips</td></tr>';
+        }
+    }
+
+    function displayLastTrips(trips){
+        const tbody = document.querySelector('#lastTripsTable tbody');
+        if(!tbody) return;
+        if(!trips.length){ tbody.innerHTML = '<tr><td colspan="6">No trips yet.</td></tr>'; return; }
+        tbody.innerHTML = trips.map(t => `
+            <tr>
+                <td>${t.destination || ''}</td>
+                <td>${(t.start_date||'')} → ${(t.end_date||'')}</td>
+                <td>${t.days ?? ''}</td>
+                <td>${t.persons ?? ''}</td>
+                <td>${t.available ? 'Yes' : 'No'}</td>
+                <td class="action-btns">
+                    <button class="edit-btn" onclick="editTrip(${t.id})">Edit</button>
+                    <button class="edit-btn" onclick="manageComments(${t.id})">Comments</button>
+                    <button class="delete-btn" onclick="deleteTrip(${t.id})">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openAddTripModal(){
+        editingTripId = null;
+        document.getElementById('tripModalTitle').textContent = 'Add Last Trip';
+        document.getElementById('tripForm').reset();
+        tripUploadedPaths = [];
+        const prev = document.getElementById('tripUploadPreview'); if(prev) prev.innerHTML = '';
+        document.getElementById('tripAvailable').checked = true;
+        document.getElementById('tripModal').classList.add('active');
+    }
+
+    function closeTripModal(){
+        document.getElementById('tripModal').classList.remove('active');
+    }
+
+    async function editTrip(id){
+        editingTripId = id;
+        try{
+            const res = await fetch(`${API_URL}/api/last_trips/${id}`);
+            const t = await res.json();
+            document.getElementById('tripModalTitle').textContent = 'Edit Last Trip';
+            document.getElementById('tripDestination').value = t.destination || '';
+            // spots may be stored as JSON string
+            let spots = t.spots; if(typeof spots === 'string'){ try{ spots = JSON.parse(spots); }catch(e){ spots = (spots||'').split(',').map(s=>s.trim()).filter(Boolean); } }
+            document.getElementById('tripSpots').value = Array.isArray(spots) ? spots.join(', ') : '';
+            document.getElementById('tripDays').value = t.days ?? '';
+            document.getElementById('tripPersons').value = t.persons ?? '';
+            let imgs = t.images; if(typeof imgs === 'string'){ try{ imgs = JSON.parse(imgs); }catch(e){ imgs = []; } }
+            document.getElementById('tripImages').value = Array.isArray(imgs) ? imgs.join(', ') : '';
+            document.getElementById('tripStartDate').value = t.start_date || '';
+            document.getElementById('tripEndDate').value = t.end_date || '';
+            document.getElementById('tripFeedback').value = t.feedback || '';
+            document.getElementById('tripAvailable').checked = !!t.available;
+            tripUploadedPaths = [];
+            const prev = document.getElementById('tripUploadPreview'); if(prev) prev.innerHTML = '';
+            document.getElementById('tripModal').classList.add('active');
+        }catch(err){ alert('Failed to load trip'); }
+    }
+
+    async function deleteTrip(id){
+        if(!confirm('Are you sure you want to delete this trip?')) return;
+        try{
+            const res = await fetch(`${API_URL}/api/admin/last_trips/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin: adminCredentials })
+            });
+            if(res.ok){ loadLastTrips(); alert('Trip deleted'); }
+            else{ alert('Delete failed'); }
+        }catch(err){ alert('Delete failed'); }
+    }
+
+    document.getElementById('tripForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const manualUrls = document.getElementById('tripImages').value
+            ? document.getElementById('tripImages').value.split(',').map(s=>s.trim()).filter(Boolean)
+            : [];
+        const imagesCombined = [...manualUrls, ...tripUploadedPaths];
+        const spotsInput = document.getElementById('tripSpots').value;
+        const spotsList = spotsInput ? spotsInput.split(',').map(s=>s.trim()).filter(Boolean) : [];
+        const tripData = {
+            destination: document.getElementById('tripDestination').value,
+            spots: spotsList,
+            days: parseInt(document.getElementById('tripDays').value),
+            persons: parseInt(document.getElementById('tripPersons').value),
+            images: imagesCombined,
+            start_date: document.getElementById('tripStartDate').value,
+            end_date: document.getElementById('tripEndDate').value,
+            feedback: document.getElementById('tripFeedback').value,
+            available: document.getElementById('tripAvailable').checked
+        };
+        try{
+            const url = editingTripId ? `${API_URL}/api/admin/last_trips/${editingTripId}` : `${API_URL}/api/admin/last_trips`;
+            const method = editingTripId ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin: adminCredentials, trip: tripData })
+            });
+            if(res.ok){ closeTripModal(); loadLastTrips(); alert(editingTripId ? 'Trip updated' : 'Trip added'); }
+            else{ alert('Operation failed'); }
+        }catch(err){ alert('Operation failed'); }
+    });
+
+    // Comment management for Last Trips
+    async function manageComments(tripId){
+        try{
+            const res = await fetch(`${API_URL}/api/last_trips/${tripId}`);
+            if(!res.ok){ alert('Failed to load comments'); return; }
+            const trip = await res.json();
+            const comments = trip.comments || [];
+            if(!comments.length){
+                alert('No comments for this trip.');
+                return;
+            }
+            const summary = comments.map(c=>`#${c.id} by ${c.name||'Guest'}:\n${c.comment}` ).join('\n\n');
+            const action = prompt(`Comments for Trip ${tripId}:\n\n${summary}\n\nType an action: edit <id> OR delete <id>`, 'edit 1');
+            if(!action) return;
+            const parts = action.trim().split(/\s+/);
+            if(parts.length !== 2){ alert('Invalid action'); return; }
+            const cmd = parts[0].toLowerCase();
+            const cid = parseInt(parts[1], 10);
+            if(!cid){ alert('Invalid id'); return; }
+            if(cmd === 'delete'){
+                await deleteComment(tripId, cid);
+            } else if(cmd === 'edit'){
+                const c = comments.find(x=>x.id === cid);
+                if(!c){ alert('Comment not found'); return; }
+                const newName = prompt('Name:', c.name||'Guest'); if(newName===null) return;
+                const newText = prompt('Comment:', c.comment||''); if(newText===null) return;
+                await editComment(tripId, cid, newName, newText);
+            } else {
+                alert('Unknown command');
+            }
+        }catch(e){ alert('Failed to load comments'); }
+    }
+
+    async function editComment(tripId, commentId, name, comment){
+        try{
+            const res = await fetch(`${API_URL}/api/admin/last_trips/${tripId}/comments/${commentId}`,{
+                method:'PUT',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ admin: adminCredentials, update: { name, comment } })
+            });
+            if(res.ok){ alert('Comment updated'); }
+            else{ alert('Update failed'); }
+        }catch(e){ alert('Update failed'); }
+    }
+
+    async function deleteComment(tripId, commentId){
+        if(!confirm('Delete this comment?')) return;
+        try{
+            const res = await fetch(`${API_URL}/api/admin/last_trips/${tripId}/comments/${commentId}`,{
+                method:'DELETE',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ admin: adminCredentials })
+            });
+            if(res.ok){ alert('Comment deleted'); }
+            else{ alert('Delete failed'); }
+        }catch(e){ alert('Delete failed'); }
+    }
+    </script>
+    <script src="/public/chat-widget.js"></script>
+</body>
+</html>
