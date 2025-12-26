@@ -1,22 +1,23 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List
 import json
-from src.schemas import Car, CarUpdate, AdminLogin
+import os
+import shutil
+import re
+from datetime import datetime
+from src.schemas import Car, CarUpdate
 from src.db_ops import Database, verify_admin
 
 router = APIRouter(tags=["cars"])
 
 db = Database()
 
-# Image upload for car images
-import os, shutil, re
-from datetime import datetime
 
 @router.post("/api/admin/upload/car")
 async def upload_car_images(
     files: List[UploadFile] = File(...),
     username: str = Form(...),
-    password: str = Form(...)
+    password: str = Form(...),
 ):
     if not verify_admin(username, password):
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -37,10 +38,12 @@ async def upload_car_images(
 
     return {"paths": saved_paths}
 
+
 @router.get("/api/cars")
 def get_cars():
     result = db.fetchall_dicts("SELECT * FROM cars WHERE available = 1")
     return {"cars": result}
+
 
 @router.get("/api/cars/{car_id}")
 def get_car(car_id: int):
@@ -49,40 +52,45 @@ def get_car(car_id: int):
         raise HTTPException(status_code=404, detail="Car not found")
     return car
 
+
 @router.post("/api/admin/cars")
 def add_car(payload: dict):
     # Expect payload to contain 'car' and 'admin' keys
-    car = payload.get('car')
-    admin = payload.get('admin')
+    car = payload.get("car")
+    admin = payload.get("admin")
 
-    if not admin or not verify_admin(admin.get('username'), admin.get('password')):
+    if not admin or not verify_admin(admin.get("username"), admin.get("password")):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     car_obj = Car(**car)
 
-    car_id = db.insert('''
+    car_id = db.insert(
+        """
         INSERT INTO cars (name, model, price_per_day, seats, transmission, fuel_type, images, description, available)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        car_obj.name,
-        car_obj.model,
-        car_obj.price_per_day,
-        car_obj.seats,
-        car_obj.transmission,
-        car_obj.fuel_type,
-        json.dumps(car_obj.images),
-        car_obj.description,
-        car_obj.available,
-    ))
+    """,
+        (
+            car_obj.name,
+            car_obj.model,
+            car_obj.price_per_day,
+            car_obj.seats,
+            car_obj.transmission,
+            car_obj.fuel_type,
+            json.dumps(car_obj.images),
+            car_obj.description,
+            car_obj.available,
+        ),
+    )
 
     return {"message": "Car added successfully", "id": car_id}
 
+
 @router.put("/api/admin/cars/{car_id}")
 def update_car(car_id: int, payload: dict):
-    admin = payload.get('admin')
-    car = payload.get('car')
+    admin = payload.get("admin")
+    car = payload.get("car")
 
-    if not admin or not verify_admin(admin.get('username'), admin.get('password')):
+    if not admin or not verify_admin(admin.get("username"), admin.get("password")):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     car_update = CarUpdate(**car)
@@ -128,10 +136,11 @@ def update_car(car_id: int, payload: dict):
 
     return {"message": "Car updated successfully"}
 
+
 @router.delete("/api/admin/cars/{car_id}")
 def delete_car(car_id: int, payload: dict):
-    admin = payload.get('admin')
-    if not admin or not verify_admin(admin.get('username'), admin.get('password')):
+    admin = payload.get("admin")
+    if not admin or not verify_admin(admin.get("username"), admin.get("password")):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     db.execute("DELETE FROM cars WHERE id = ?", (car_id,))

@@ -1,6 +1,6 @@
 # PI: Chatbot - OpenAI-backed chatbot API with session tracking and planner endpoint
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List
@@ -13,6 +13,7 @@ client = None
 try:
     if OPENAI_API_KEY:
         from openai import OpenAI
+
         client = OpenAI(api_key=OPENAI_API_KEY)
 except Exception:
     client = None
@@ -21,10 +22,12 @@ router = APIRouter(tags=["chatbot"])
 
 db = Database()
 
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str
     token: Optional[str] = None
+
 
 class TripPlan(BaseModel):
     name: str = Field(..., min_length=1)
@@ -32,11 +35,12 @@ class TripPlan(BaseModel):
     city: str = Field(..., min_length=1)
     phone: str = Field(..., min_length=6)
     destination: str = Field(..., min_length=1)
-    query: str = Field('', description="Extra preferences or questions")
+    query: str = Field("", description="Extra preferences or questions")
     budget: float = Field(..., gt=0)
     days: int = Field(..., gt=0)
     session_id: Optional[str] = None
     token: Optional[str] = None
+
 
 @router.post("/api/chat")
 def chat(req: ChatRequest):
@@ -56,11 +60,18 @@ def chat(req: ChatRequest):
     )
 
     # Generate reply using OpenAI if configured, otherwise fallback
-    reply_text = generate_ai_reply(req.session_id, req.message) if client else generate_reply(req.message)
+    reply_text = (
+        generate_ai_reply(req.session_id, req.message)
+        if client
+        else generate_reply(req.message)
+    )
 
     # Prefix if guest
     if user_id is None:
-        reply_text = "You're chatting as a guest. Please login for a better experience. " + reply_text
+        reply_text = (
+            "You're chatting as a guest. Please login for a better experience. "
+            + reply_text
+        )
 
     # Log assistant reply
     db.insert(
@@ -68,10 +79,17 @@ def chat(req: ChatRequest):
         INSERT INTO chat_logs (session_id, user_id, role, message, created_at)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (req.session_id, user_id, "assistant", reply_text, datetime.utcnow().isoformat()),
+        (
+            req.session_id,
+            user_id,
+            "assistant",
+            reply_text,
+            datetime.utcnow().isoformat(),
+        ),
     )
 
     return {"reply": reply_text, "guest": user_id is None}
+
 
 @router.get("/api/chat/history")
 def history(session_id: str, limit: int = 50):
@@ -81,11 +99,14 @@ def history(session_id: str, limit: int = 50):
     )
     return {"messages": list(reversed(rows))}
 
+
 @router.post("/api/chat/plan")
 def submit_plan(plan: TripPlan):
     user_id = None
     if plan.token:
-        sess = db.fetchone("SELECT user_id FROM sessions WHERE token = ?", (plan.token,))
+        sess = db.fetchone(
+            "SELECT user_id FROM sessions WHERE token = ?", (plan.token,)
+        )
         if sess:
             user_id = sess[0] if isinstance(sess, tuple) else sess["user_id"]
 
@@ -130,7 +151,12 @@ def generate_ai_reply(session_id: str, last_user_message: str) -> str:
             content = r[1] if isinstance(r, tuple) else r["message"]
             if role not in ("user", "assistant"):
                 continue
-            history.append({"role": "assistant" if role == "assistant" else "user", "content": content})
+            history.append(
+                {
+                    "role": "assistant" if role == "assistant" else "user",
+                    "content": content,
+                }
+            )
         # System prompt to scope the assistant
         system = {
             "role": "system",

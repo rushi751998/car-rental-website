@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 class Car(BaseModel):
     name: str
     model: str
@@ -11,6 +12,7 @@ class Car(BaseModel):
     images: List[str]
     description: Optional[str] = ""
     available: bool = True
+
 
 class CarUpdate(BaseModel):
     name: Optional[str] = None
@@ -23,6 +25,7 @@ class CarUpdate(BaseModel):
     description: Optional[str] = None
     available: Optional[bool] = None
 
+
 class PicnicSpot(BaseModel):
     name: str
     price: float
@@ -34,6 +37,7 @@ class PicnicSpot(BaseModel):
     hotel_images: Optional[List[str]] = None
     available: bool = True
 
+
 class PicnicSpotUpdate(BaseModel):
     name: Optional[str] = None
     price: Optional[float] = None
@@ -44,6 +48,7 @@ class PicnicSpotUpdate(BaseModel):
     trip_images: Optional[List[str]] = None
     hotel_images: Optional[List[str]] = None
     available: Optional[bool] = None
+
 
 class AdminLogin(BaseModel):
     username: str

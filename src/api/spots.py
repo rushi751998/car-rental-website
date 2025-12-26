@@ -1,22 +1,23 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List
 import json
-from src.schemas import PicnicSpot, PicnicSpotUpdate, AdminLogin
+import os
+import shutil
+import re
+from datetime import datetime
+from src.schemas import PicnicSpot, PicnicSpotUpdate
 from src.db_ops import Database, verify_admin
 
 router = APIRouter(tags=["spots"])
 
 db = Database()
 
-# Image upload for picnic spot images
-import os, shutil, re
-from datetime import datetime
 
 @router.post("/api/admin/upload/spot")
 async def upload_spot_images(
     files: List[UploadFile] = File(...),
     username: str = Form(...),
-    password: str = Form(...)
+    password: str = Form(...),
 ):
     if not verify_admin(username, password):
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -37,10 +38,12 @@ async def upload_spot_images(
 
     return {"paths": saved_paths}
 
+
 @router.get("/api/spots")
 def get_spots():
     result = db.fetchall_dicts("SELECT * FROM picnic_spots WHERE available = 1")
     return {"spots": result}
+
 
 @router.get("/api/spots/{spot_id}")
 def get_spot(spot_id: int):
@@ -49,39 +52,44 @@ def get_spot(spot_id: int):
         raise HTTPException(status_code=404, detail="Spot not found")
     return spot
 
+
 @router.post("/api/admin/spots")
 def add_spot(payload: dict):
-    spot = payload.get('spot')
-    admin = payload.get('admin')
+    spot = payload.get("spot")
+    admin = payload.get("admin")
 
-    if not admin or not verify_admin(admin.get('username'), admin.get('password')):
+    if not admin or not verify_admin(admin.get("username"), admin.get("password")):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     spot_obj = PicnicSpot(**spot)
 
-    spot_id = db.insert('''
+    spot_id = db.insert(
+        """
         INSERT INTO picnic_spots (name, price, location, images, short_description, detailed_description, trip_images, hotel_images, available)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        spot_obj.name,
-        spot_obj.price,
-        spot_obj.location,
-        json.dumps(spot_obj.images),
-        spot_obj.short_description,
-        spot_obj.detailed_description,
-        json.dumps(spot_obj.trip_images or []),
-        json.dumps(spot_obj.hotel_images or []),
-        spot_obj.available,
-    ))
+    """,
+        (
+            spot_obj.name,
+            spot_obj.price,
+            spot_obj.location,
+            json.dumps(spot_obj.images),
+            spot_obj.short_description,
+            spot_obj.detailed_description,
+            json.dumps(spot_obj.trip_images or []),
+            json.dumps(spot_obj.hotel_images or []),
+            spot_obj.available,
+        ),
+    )
 
     return {"message": "Spot added successfully", "id": spot_id}
 
+
 @router.put("/api/admin/spots/{spot_id}")
 def update_spot(spot_id: int, payload: dict):
-    admin = payload.get('admin')
-    spot = payload.get('spot')
+    admin = payload.get("admin")
+    spot = payload.get("spot")
 
-    if not admin or not verify_admin(admin.get('username'), admin.get('password')):
+    if not admin or not verify_admin(admin.get("username"), admin.get("password")):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     spot_update = PicnicSpotUpdate(**spot)
@@ -127,10 +135,11 @@ def update_spot(spot_id: int, payload: dict):
 
     return {"message": "Spot updated successfully"}
 
+
 @router.delete("/api/admin/spots/{spot_id}")
 def delete_spot(spot_id: int, payload: dict):
-    admin = payload.get('admin')
-    if not admin or not verify_admin(admin.get('username'), admin.get('password')):
+    admin = payload.get("admin")
+    if not admin or not verify_admin(admin.get("username"), admin.get("password")):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     db.execute("DELETE FROM picnic_spots WHERE id = ?", (spot_id,))

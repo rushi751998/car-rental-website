@@ -12,24 +12,33 @@ db = Database()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
 
+
 class UserLogin(BaseModel):
     username: str
     password: str
 
+
 class Token(BaseModel):
     token: str
+
 
 @router.post("/api/users/register")
 def register_user(payload: UserCreate):
     # Check if exists
-    existing = db.fetchone("SELECT id FROM users WHERE username = ? OR email = ?", (payload.username, payload.email))
+    existing = db.fetchone(
+        "SELECT id FROM users WHERE username = ? OR email = ?",
+        (payload.username, payload.email),
+    )
     if existing:
-        raise HTTPException(status_code=400, detail="User with this username or email already exists")
+        raise HTTPException(
+            status_code=400, detail="User with this username or email already exists"
+        )
     pwd_hash = pwd_context.hash(payload.password)
     db.insert(
         """
@@ -40,9 +49,12 @@ def register_user(payload: UserCreate):
     )
     return {"message": "User registered successfully"}
 
+
 @router.post("/api/users/login")
 def login_user(payload: UserLogin):
-    user = db.fetchone("SELECT id, password_hash FROM users WHERE username = ?", (payload.username,))
+    user = db.fetchone(
+        "SELECT id, password_hash FROM users WHERE username = ?", (payload.username,)
+    )
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     # sqlite3.Row supports key access
@@ -60,10 +72,12 @@ def login_user(payload: UserLogin):
     )
     return {"message": "Login successful", "token": token}
 
+
 @router.post("/api/users/logout")
 def logout_user(token: Token):
-    deleted = db.execute("DELETE FROM sessions WHERE token = ?", (token.token,))
+    db.execute("DELETE FROM sessions WHERE token = ?", (token.token,))
     return {"message": "Logged out"}
+
 
 @router.get("/api/users/me")
 def get_me(token: str):
@@ -71,5 +85,7 @@ def get_me(token: str):
     if not sess:
         raise HTTPException(status_code=401, detail="Unauthorized")
     user_id = sess[0] if isinstance(sess, tuple) else sess["user_id"]
-    user = db.fetchone_dict("SELECT id, username, email, created_at FROM users WHERE id = ?", (user_id,))
+    user = db.fetchone_dict(
+        "SELECT id, username, email, created_at FROM users WHERE id = ?", (user_id,)
+    )
     return {"user": user}

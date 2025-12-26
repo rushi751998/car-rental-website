@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import List, Optional
 import json
-import os, shutil, re
+import os
+import shutil
+import re
 from datetime import datetime
-
 from src.db_ops import Database, verify_admin
 from src.schemas import AdminLogin
 
@@ -11,12 +12,13 @@ router = APIRouter(tags=["last_trips"])
 
 db = Database()
 
+
 # Image upload for last trips
 @router.post("/api/admin/upload/trip")
 async def upload_trip_images(
     files: List[UploadFile] = File(...),
     username: str = Form(...),
-    password: str = Form(...)
+    password: str = Form(...),
 ):
     if not verify_admin(username, password):
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -37,6 +39,7 @@ async def upload_trip_images(
 
     return {"paths": saved_paths}
 
+
 # Public endpoints
 @router.get("/api/last_trips")
 def list_last_trips():
@@ -44,6 +47,7 @@ def list_last_trips():
         "SELECT * FROM last_trips WHERE available = 1 ORDER BY datetime(created_at) DESC"
     )
     return {"trips": rows}
+
 
 @router.get("/api/last_trips/{trip_id}")
 def get_last_trip(trip_id: int):
@@ -57,6 +61,7 @@ def get_last_trip(trip_id: int):
     trip["comments"] = comments
     return trip
 
+
 @router.get("/api/last_trips/{trip_id}/comments")
 def get_trip_comments(trip_id: int):
     return {
@@ -66,10 +71,12 @@ def get_trip_comments(trip_id: int):
         )
     }
 
+
 class NewComment(AdminLogin):
     # Inherit for typing structure but not using admin creds here
     name: Optional[str] = None
     comment: str
+
 
 @router.post("/api/last_trips/{trip_id}/comments")
 def add_trip_comment(trip_id: int, payload: dict):
@@ -87,6 +94,7 @@ def add_trip_comment(trip_id: int, payload: dict):
         (trip_id, name, comment, datetime.utcnow().isoformat()),
     )
     return {"message": "Comment added"}
+
 
 # Admin CRUD
 @router.post("/api/admin/last_trips")
@@ -130,6 +138,7 @@ def add_last_trip(payload: dict):
     )
     return {"message": "Trip added", "id": last_id}
 
+
 @router.put("/api/admin/last_trips/{trip_id}")
 def update_last_trip(trip_id: int, payload: dict):
     admin = payload.get("admin")
@@ -145,28 +154,38 @@ def update_last_trip(trip_id: int, payload: dict):
     values = []
 
     if "destination" in trip and trip["destination"] is not None:
-        fields.append("destination = ?"); values.append(trip["destination"])
+        fields.append("destination = ?")
+        values.append(trip["destination"])
     if "spots" in trip and trip["spots"] is not None:
         val = trip["spots"]
         if isinstance(val, list):
-            fields.append("spots = ?"); values.append(json.dumps(val))
+            fields.append("spots = ?")
+            values.append(json.dumps(val))
         else:
             spots_list = [s.strip() for s in val.split(",") if s.strip()]
-            fields.append("spots = ?"); values.append(json.dumps(spots_list))
+            fields.append("spots = ?")
+            values.append(json.dumps(spots_list))
     if "days" in trip and trip["days"] is not None:
-        fields.append("days = ?"); values.append(int(trip["days"]))
+        fields.append("days = ?")
+        values.append(int(trip["days"]))
     if "persons" in trip and trip["persons"] is not None:
-        fields.append("persons = ?"); values.append(int(trip["persons"]))
+        fields.append("persons = ?")
+        values.append(int(trip["persons"]))
     if "images" in trip and trip["images"] is not None:
-        fields.append("images = ?"); values.append(json.dumps(trip["images"]))
+        fields.append("images = ?")
+        values.append(json.dumps(trip["images"]))
     if "start_date" in trip and trip["start_date"] is not None:
-        fields.append("start_date = ?"); values.append(trip["start_date"])
+        fields.append("start_date = ?")
+        values.append(trip["start_date"])
     if "end_date" in trip and trip["end_date"] is not None:
-        fields.append("end_date = ?"); values.append(trip["end_date"])
+        fields.append("end_date = ?")
+        values.append(trip["end_date"])
     if "feedback" in trip and trip["feedback"] is not None:
-        fields.append("feedback = ?"); values.append(trip["feedback"])
+        fields.append("feedback = ?")
+        values.append(trip["feedback"])
     if "available" in trip and trip["available"] is not None:
-        fields.append("available = ?"); values.append(1 if trip["available"] else 0)
+        fields.append("available = ?")
+        values.append(1 if trip["available"] else 0)
 
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -174,6 +193,7 @@ def update_last_trip(trip_id: int, payload: dict):
     values.append(trip_id)
     db.execute(f"UPDATE last_trips SET {', '.join(fields)} WHERE id = ?", values)
     return {"message": "Trip updated"}
+
 
 @router.delete("/api/admin/last_trips/{trip_id}")
 def delete_last_trip(trip_id: int, payload: dict):
@@ -183,6 +203,7 @@ def delete_last_trip(trip_id: int, payload: dict):
 
     db.execute("DELETE FROM last_trips WHERE id = ?", (trip_id,))
     return {"message": "Trip deleted"}
+
 
 @router.put("/api/admin/last_trips/{trip_id}/comments/{comment_id}")
 def admin_update_comment(trip_id: int, comment_id: int, payload: dict):
@@ -194,25 +215,32 @@ def admin_update_comment(trip_id: int, comment_id: int, payload: dict):
     # Ensure trip and comment exist and are linked
     if not db.fetchone("SELECT 1 FROM last_trips WHERE id = ?", (trip_id,)):
         raise HTTPException(status_code=404, detail="Trip not found")
-    if not db.fetchone("SELECT 1 FROM last_trip_comments WHERE id = ? AND trip_id = ?", (comment_id, trip_id)):
+    if not db.fetchone(
+        "SELECT 1 FROM last_trip_comments WHERE id = ? AND trip_id = ?",
+        (comment_id, trip_id),
+    ):
         raise HTTPException(status_code=404, detail="Comment not found")
 
     fields = []
     values = []
     if "name" in update and update["name"] is not None:
-        fields.append("name = ?"); values.append(update["name"])
+        fields.append("name = ?")
+        values.append(update["name"])
     if "comment" in update and update["comment"] is not None:
-        fields.append("comment = ?"); values.append(update["comment"])
+        fields.append("comment = ?")
+        values.append(update["comment"])
 
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
 
     values.append(comment_id)
-    db.execute(f"UPDATE last_trip_comments SET {', '.join(fields)} WHERE id = ?", values)
+    db.execute(
+        f"UPDATE last_trip_comments SET {', '.join(fields)} WHERE id = ?", values
+    )
     return {"message": "Comment updated"}
 
-@router.delete("/api/admin/last_trips/{trip_id}/comments/{comment_id}")
 
+@router.delete("/api/admin/last_trips/{trip_id}/comments/{comment_id}")
 def admin_delete_comment(trip_id: int, comment_id: int, payload: dict):
     admin = payload.get("admin")
     if not admin or not verify_admin(admin.get("username"), admin.get("password")):
@@ -221,11 +249,15 @@ def admin_delete_comment(trip_id: int, comment_id: int, payload: dict):
     # Ensure trip and comment exist and are linked
     if not db.fetchone("SELECT 1 FROM last_trips WHERE id = ?", (trip_id,)):
         raise HTTPException(status_code=404, detail="Trip not found")
-    if not db.fetchone("SELECT 1 FROM last_trip_comments WHERE id = ? AND trip_id = ?", (comment_id, trip_id)):
+    if not db.fetchone(
+        "SELECT 1 FROM last_trip_comments WHERE id = ? AND trip_id = ?",
+        (comment_id, trip_id),
+    ):
         raise HTTPException(status_code=404, detail="Comment not found")
 
     db.execute("DELETE FROM last_trip_comments WHERE id = ?", (comment_id,))
     return {"message": "Comment deleted"}
+
 
 @router.post("/api/admin/last_trips/list")
 def admin_list_last_trips(payload: dict):

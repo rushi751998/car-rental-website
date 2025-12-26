@@ -3,12 +3,14 @@ import sqlite3
 
 from src.db import DB_PATH, row_to_dict
 
+
 class Database:
     """
     Simple OOP wrapper around SQLite operations.
     All methods accept a SQL query string and parameters, and open/close
     a connection per call to keep things thread-safe with FastAPI.
     """
+
     def __init__(self, db_path: str = DB_PATH) -> None:
         self.db_path = db_path
 
@@ -26,7 +28,9 @@ class Database:
         conn.close()
         return rows
 
-    def fetchall_dicts(self, sql: str, params: Sequence[Any] = ()) -> List[Dict[str, Any]]:
+    def fetchall_dicts(
+        self, sql: str, params: Sequence[Any] = ()
+    ) -> List[Dict[str, Any]]:
         return [row_to_dict(r) for r in self.fetchall(sql, params)]
 
     def fetchone(self, sql: str, params: Sequence[Any] = ()) -> Optional[sqlite3.Row]:
@@ -37,7 +41,9 @@ class Database:
         conn.close()
         return row
 
-    def fetchone_dict(self, sql: str, params: Sequence[Any] = ()) -> Optional[Dict[str, Any]]:
+    def fetchone_dict(
+        self, sql: str, params: Sequence[Any] = ()
+    ) -> Optional[Dict[str, Any]]:
         r = self.fetchone(sql, params)
         return row_to_dict(r) if r else None
 
@@ -74,13 +80,16 @@ class Database:
         )
         return row is not None
 
+
 # Module-level convenience instance
 db = Database()
+
 
 # Initialize database
 def init_db():
     # Cars table
-    db.execute('''
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS cars (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -93,10 +102,12 @@ def init_db():
             description TEXT,
             available BOOLEAN DEFAULT 1
         )
-    ''')
+    """
+    )
 
     # Picnic spots table
-    db.execute('''
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS picnic_spots (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -107,7 +118,8 @@ def init_db():
             detailed_description TEXT,
             available BOOLEAN DEFAULT 1
         )
-    ''')
+    """
+    )
 
     # Add new JSON columns if the table already exists
     try:
@@ -120,16 +132,19 @@ def init_db():
         pass
 
     # Admin table
-    db.execute('''
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS admin (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL
         )
-    ''')
+    """
+    )
 
     # PI: UserAuth - Users and Sessions tables
-    db.execute('''
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
@@ -137,8 +152,10 @@ def init_db():
             password_hash TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
-    ''')
-    db.execute('''
+    """
+    )
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -146,10 +163,12 @@ def init_db():
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )
-    ''')
+    """
+    )
 
     # PI: Chatbot - Chat logs table
-    db.execute('''
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS chat_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT NOT NULL,
@@ -159,10 +178,12 @@ def init_db():
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
         )
-    ''')
+    """
+    )
 
     # PI: LastTrips - tables for last trips and comments
-    db.execute('''
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS last_trips (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             destination TEXT NOT NULL,
@@ -176,8 +197,10 @@ def init_db():
             created_at TEXT NOT NULL,
             available BOOLEAN DEFAULT 1
         )
-    ''')
-    db.execute('''
+    """
+    )
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS last_trip_comments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trip_id INTEGER NOT NULL,
@@ -186,13 +209,19 @@ def init_db():
             created_at TEXT NOT NULL,
             FOREIGN KEY(trip_id) REFERENCES last_trips(id) ON DELETE CASCADE
         )
-    ''')
+    """
+    )
 
     # Insert default admin if not exists
-    if not db.fetchone("SELECT 1 FROM admin WHERE username = ?", ('admin',)):
-        db.execute("INSERT INTO admin (username, password) VALUES (?, ?)", ('admin', 'admin123'))
+    if not db.fetchone("SELECT 1 FROM admin WHERE username = ?", ("admin",)):
+        db.execute(
+            "INSERT INTO admin (username, password) VALUES (?, ?)",
+            ("admin", "admin123"),
+        )
+
 
 init_db()
+
 
 def verify_admin(username: str, password: str) -> bool:
     return db.verify_admin(username, password)
