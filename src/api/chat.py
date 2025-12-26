@@ -44,19 +44,27 @@ class TripPlan(BaseModel):
 
 @router.post("/api/chat")
 def chat(req: ChatRequest):
-    user_id = None
+    user_email = None
     if req.token:
-        sess = db.fetchone("SELECT user_id FROM sessions WHERE token = ?", (req.token,))
+        sess = db.fetchone(
+            "SELECT user_email FROM sessions WHERE token = ?", (req.token,)
+        )
         if sess:
-            user_id = sess[0] if isinstance(sess, tuple) else sess["user_id"]
+            user_email = sess[0] if isinstance(sess, tuple) else sess["user_email"]
 
     # Log user message
     db.insert(
         """
-        INSERT INTO chat_logs (session_id, user_id, role, message, created_at)
+        INSERT INTO chat_logs (session_id, user_email, role, message, created_at)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (req.session_id, user_id, "user", req.message, datetime.utcnow().isoformat()),
+        (
+            req.session_id,
+            user_email,
+            "user",
+            req.message,
+            datetime.utcnow().isoformat(),
+        ),
     )
 
     # Generate reply using OpenAI if configured, otherwise fallback
@@ -66,35 +74,28 @@ def chat(req: ChatRequest):
         else generate_reply(req.message)
     )
 
-    # Prefix if guest
-    if user_id is None:
-        reply_text = (
-            "You're chatting as a guest. Please login for a better experience. "
-            + reply_text
-        )
-
     # Log assistant reply
     db.insert(
         """
-        INSERT INTO chat_logs (session_id, user_id, role, message, created_at)
+        INSERT INTO chat_logs (session_id, user_email, role, message, created_at)
         VALUES (?, ?, ?, ?, ?)
         """,
         (
             req.session_id,
-            user_id,
+            user_email,
             "assistant",
             reply_text,
             datetime.utcnow().isoformat(),
         ),
     )
 
-    return {"reply": reply_text, "guest": user_id is None}
+    return {"reply": reply_text, "user_email": user_email}
 
 
 @router.get("/api/chat/history")
 def history(session_id: str, limit: int = 50):
     rows = db.fetchall_dicts(
-        "SELECT session_id, user_id, role, message, created_at FROM chat_logs WHERE session_id = ? ORDER BY id DESC LIMIT ?",
+        "SELECT session_id, user_email, role, message, created_at FROM chat_logs WHERE session_id = ? ORDER BY id DESC LIMIT ?",
         (session_id, limit),
     )
     return {"messages": list(reversed(rows))}
@@ -102,13 +103,13 @@ def history(session_id: str, limit: int = 50):
 
 @router.post("/api/chat/plan")
 def submit_plan(plan: TripPlan):
-    user_id = None
+    user_email = None
     if plan.token:
         sess = db.fetchone(
-            "SELECT user_id FROM sessions WHERE token = ?", (plan.token,)
+            "SELECT user_email FROM sessions WHERE token = ?", (plan.token,)
         )
         if sess:
-            user_id = sess[0] if isinstance(sess, tuple) else sess["user_id"]
+            user_email = sess[0] if isinstance(sess, tuple) else sess["user_email"]
 
     sid = plan.session_id or f"sess_{datetime.utcnow().timestamp()}"
 
@@ -127,13 +128,34 @@ def submit_plan(plan: TripPlan):
 
     db.insert(
         """
-        INSERT INTO chat_logs (session_id, user_id, role, message, created_at)
+        INSERT INTO chat_logs (session_id, user_email, role, message, created_at)
         VALUES (?, ?, ?, ?, ?)
         """,
-        (sid, user_id, "planner", summary, datetime.utcnow().isoformat()),
+        (sid, user_email, "planner", summary, datetime.utcnow().isoformat()),
     )
 
-    return {"session_id": sid, "summary": summary}
+    # Create WhatsApp message
+    whatsapp_message = (
+        f"New Trip Plan Request!\n\n"
+        f"Name: {plan.name}\n"
+        f"Phone: {plan.phone}\n"
+        f"City: {plan.city}\n"
+        f"Destination: {plan.destination}\n"
+        f"Budget: ₹{plan.budget}\n"
+        f"Days: {plan.days}\n"
+        f"Query: {plan.query}"
+    )
+    # Generate WhatsApp URL
+    import urllib.parse
+
+    whatsapp_url = f"https://wa.me/{config.WHATSAPP_PHONE.replace('+', '')}?text={urllib.parse.quote(whatsapp_message)}"
+
+    return {
+        "session_id": sid,
+        "summary": summary,
+        "whatsapp_url": whatsapp_url,
+        "message": "Trip plan received! Click the WhatsApp link to contact us.",
+    }
 
 
 def generate_ai_reply(session_id: str, last_user_message: str) -> str:

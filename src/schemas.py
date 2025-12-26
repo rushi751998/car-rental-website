@@ -53,3 +53,17 @@ class PicnicSpotUpdate(BaseModel):
 class AdminLogin(BaseModel):
     username: str
     password: str
+
+
+class UserLoginEmail(BaseModel):
+    email: str
+    password: str
+
+
+class GoogleLoginRequest(BaseModel):
+    token: str
+
+
+class WhatsAppConfig(BaseModel):
+    phone_number: str
+    message: str

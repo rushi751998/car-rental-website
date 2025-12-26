@@ -12,6 +12,7 @@ class Config:
         self.HOST = os.getenv("HOST", "0.0.0.0")
         self.PORT = int(os.getenv("PORT", "5000"))
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+        self.WHATSAPP_PHONE = os.getenv("WHATSAPP_PHONE", "+919876543210")
 
     def __repr__(self):
         return f"Config(HOST={self.HOST}, PORT={self.PORT}, OPENAI_API_KEY={'***' if self.OPENAI_API_KEY else 'Not Set'})"

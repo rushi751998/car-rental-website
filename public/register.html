@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Account - Premium Rentals</title>
+  <link rel="stylesheet" href="/public/nav-styles.css" />
   <style>
     body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f8f9fa;color:#333;margin:0}
     .container{max-width:500px;margin:4rem auto;background:#fff;padding:2rem;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
@@ -13,43 +14,18 @@
     .link{color:#667eea;text-decoration:none}
     .error{color:#dc3545;margin:0.5rem 0}
     .success{color:#28a745;margin:0.5rem 0}
-    /* Header Nav */
-    header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:1rem 0;position:sticky;top:0;z-index:1000;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
-    nav{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px}
-    .logo{font-size:1.5rem;font-weight:700}
-    .nav-links{display:flex;list-style:none;gap:2rem}
-    .nav-links a{color:#fff;text-decoration:none}
-    .menu-toggle{display:none;flex-direction:column;cursor:pointer}
-    .menu-toggle span{width:25px;height:3px;background:#fff;margin:3px 0}
-    @media(max-width:768px){
-      nav{position:relative}
-      .nav-links{position:absolute;top:100%;left:0;right:0;background:#667eea;flex-direction:column;padding:1rem;transform:translateY(-100%);opacity:0;pointer-events:none;transition:transform .3s,opacity .3s}
-      .nav-links.active{transform:translateY(0);opacity:1;pointer-events:all}
-      .menu-toggle{display:flex}
-    }
   </style>
 </head>
 <body>
-  <header>
-    <nav style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px">
-      <div class="logo">🚗 Premium Rentals</div>
-      <ul class="nav-links" id="navLinks" style="display:flex;list-style:none;gap:2rem">
-        <li><a href="index.html" class="link">Home</a></li>
-        <li><a href="cars.html" class="link">Cars</a></li>
-        <li><a href="spots.html" class="link">Picnic Spots</a></li>
-        <li><a href="last-trips.html" class="link">Last trips</a></li>
-        <li><a href="index.html#about" class="link">About</a></li>
-        <li><a href="index.html#contact" class="link">Contact</a></li>
-      </ul>
-      <div class="menu-toggle" id="menuToggle" style="display:none;flex-direction:column;cursor:pointer"><span style="width:25px;height:3px;background:#667eea;margin:3px 0"></span><span style="width:25px;height:3px;background:#667eea;margin:3px 0"></span><span style="width:25px;height:3px;background:#667eea;margin:3px 0"></span></div>
-    </nav>
-  </header>
+  <!-- Shared Navigation -->
+  <div id="nav-placeholder"></div>
   <div class="container">
     <h1>Create Account</h1>
     <div id="msg"></div>
-    <input id="username" class="input" placeholder="Username" />
-    <input id="email" class="input" type="email" placeholder="Email" />
+    <input id="fullName" class="input" type="text" placeholder="Full Name" />
+    <input id="email" class="input" type="email" placeholder="Email Address" />
     <input id="password" class="input" type="password" placeholder="Password" />
+    <input id="confirmPassword" class="input" type="password" placeholder="Confirm Password" />
     <button class="btn" onclick="doRegister()">Register</button>
     <p style="margin-top:1rem;">Already have an account? <a class="link" href="login.html">Login</a></p>
   </div>
@@ -58,20 +34,49 @@
     const menuToggle = document.getElementById('menuToggle');
     if(menuToggle){ const nl = document.getElementById('navLinks'); if(nl){ menuToggle.addEventListener('click', ()=> nl.classList.toggle('active')); } }
     async function doRegister(){
-      const username = document.getElementById('username').value.trim();
+      const full_name = document.getElementById('fullName').value.trim();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value.trim();
+      const confirm_password = document.getElementById('confirmPassword').value.trim();
       const msg = document.getElementById('msg');
       msg.innerHTML = '';
+      
+      // Validation
+      if(!full_name || !email || !password || !confirm_password){ 
+        msg.innerHTML = `<div class='error'>Please fill all fields</div>`; 
+        return; 
+      }
+      
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if(!emailRegex.test(email)){ 
+        msg.innerHTML = `<div class='error'>Please enter a valid email address</div>`; 
+        return; 
+      }
+      
+      // Password match validation
+      if(password !== confirm_password){ 
+        msg.innerHTML = `<div class='error'>Passwords do not match</div>`; 
+        return; 
+      }
+      
+      // Password strength validation
+      if(password.length < 6){ 
+        msg.innerHTML = `<div class='error'>Password must be at least 6 characters long</div>`; 
+        return; 
+      }
+      
       try{
-        const res = await fetch(`${API_URL}/api/users/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,password})});
+        const res = await fetch(`${API_URL}/api/users/register`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({full_name,email,password,confirm_password})});
         const data = await res.json();
         if(!res.ok){ msg.innerHTML = `<div class='error'>${data.detail||'Registration failed'}</div>`; return; }
-        msg.innerHTML = `<div class='success'>Registration successful. Please login.</div>`;
-        setTimeout(()=>{ window.location.href = 'login.html'; }, 800);
+        msg.innerHTML = `<div class='success'>Registration successful! Redirecting to login...</div>`;
+        setTimeout(()=>{ window.location.href = 'login.html'; }, 1000);
       }catch(err){ msg.innerHTML = `<div class='error'>Network error</div>`; }
     }
   </script>
+  <script src="/public/nav-loader.js"></script>
+  <script src="/public/nav-user.js"></script>
   <script src="/public/chat-widget.js"></script>
 </body>
 </html>
